@@ -10,11 +10,12 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiOkResponse } from '@nestjs/swagger';
-import { ProductosService, type Producto } from './productos.service.js';
+import { ApiTags, ApiOperation, ApiResponse, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
+import { ProductosService } from './productos.service.js';
 import { CrearProductoDto } from './dto/crear-producto.dto.js';
 import { ActualizarPrecioDto } from './dto/actualizar-precio.dto.js';
 
@@ -25,6 +26,7 @@ export class ProductosController {
 
   @Get()
   @ApiOperation({ summary: 'Listar productos disponibles' })
+  @ApiQuery({ name: 'nombre', required: false, description: 'Filtra por nombre (contiene, sin distinguir mayúsculas).' })
   @ApiOkResponse({
     description: 'Lista de productos.',
     schema: {
@@ -39,8 +41,8 @@ export class ProductosController {
       },
     },
   })
-  findAll(): Producto[] {
-    return this.productosService.findAll();
+  findAll(@Query('nombre') nombre?: string) {
+    return this.productosService.findAll(nombre);
   }
 
   @Get(':id')
@@ -58,8 +60,8 @@ export class ProductosController {
   })
   @ApiResponse({ status: 400, description: 'El id no es un número válido.' })
   @ApiResponse({ status: 404, description: 'Producto no encontrado.' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    const producto = this.productosService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const producto = await this.productosService.findOne(id);
     return {
       ...producto,
       _links: {
@@ -75,8 +77,8 @@ export class ProductosController {
   @ApiOperation({ summary: 'Crear un producto' })
   @ApiResponse({ status: 201, description: 'Producto creado, con header Location.' })
   @ApiResponse({ status: 400, description: 'Datos inválidos.' })
-  crear(@Body() dto: CrearProductoDto, @Res({ passthrough: true }) res: Response) {
-    const nuevo = this.productosService.crear(dto);
+  async crear(@Body() dto: CrearProductoDto, @Res({ passthrough: true }) res: Response) {
+    const nuevo = await this.productosService.crear(dto);
     res.setHeader('Location', `/api/v1/productos/${nuevo.id}`);
     return nuevo;
   }
@@ -87,8 +89,8 @@ export class ProductosController {
   @ApiResponse({ status: 204, description: 'Producto reemplazado.' })
   @ApiResponse({ status: 400, description: 'Datos inválidos.' })
   @ApiResponse({ status: 404, description: 'Producto no encontrado.' })
-  reemplazar(@Param('id', ParseIntPipe) id: number, @Body() dto: CrearProductoDto) {
-    this.productosService.reemplazar(id, dto);
+  async reemplazar(@Param('id', ParseIntPipe) id: number, @Body() dto: CrearProductoDto) {
+    await this.productosService.reemplazar(id, dto);
   }
 
   @Patch(':id')
@@ -105,7 +107,7 @@ export class ProductosController {
   @ApiOperation({ summary: 'Eliminar un producto' })
   @ApiResponse({ status: 204, description: 'Producto eliminado.' })
   @ApiResponse({ status: 404, description: 'Producto no encontrado.' })
-  eliminar(@Param('id', ParseIntPipe) id: number) {
-    this.productosService.eliminar(id);
+  async eliminar(@Param('id', ParseIntPipe) id: number) {
+    await this.productosService.eliminar(id);
   }
 }

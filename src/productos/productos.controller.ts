@@ -18,6 +18,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiOkResponse, ApiQuery } from '@ne
 import { ProductosService } from './productos.service.js';
 import { CrearProductoDto } from './dto/crear-producto.dto.js';
 import { ActualizarPrecioDto } from './dto/actualizar-precio.dto.js';
+import { JsonSchemaValidationPipe } from '../common/json-schema-validation.pipe.js';
+import producto from './schemas/producto.schema.v2.json' with { type: 'json' };
 
 @ApiTags('productos')
 @Controller('productos')
@@ -77,7 +79,7 @@ export class ProductosController {
   @ApiOperation({ summary: 'Crear un producto' })
   @ApiResponse({ status: 201, description: 'Producto creado, con header Location.' })
   @ApiResponse({ status: 400, description: 'Datos inválidos.' })
-  async crear(@Body() dto: CrearProductoDto, @Res({ passthrough: true }) res: Response) {
+  async crear(@Body(new JsonSchemaValidationPipe(producto)) dto: any, @Res({ passthrough: true }) res: Response) {
     const nuevo = await this.productosService.crear(dto);
     res.setHeader('Location', `/api/v1/productos/${nuevo.id}`);
     return nuevo;
